@@ -1,0 +1,23 @@
+[Unit]
+Description=Sarraf Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/sarraf-bot
+
+# Activate venv and run as a module so relative imports work
+ExecStart=/opt/sarraf-bot/venv/bin/python -m bot.main
+
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Make sure .env is loaded from WorkingDirectory
+EnvironmentFile=-/opt/sarraf-bot/.env
+
+[Install]
+WantedBy=multi-user.target
