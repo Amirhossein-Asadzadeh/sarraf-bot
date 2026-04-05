@@ -94,12 +94,10 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
     await bot.send_message(
         chat_id=chat_id,
         text=(
-            "✅ <b>تراکنش شما تأیید شد</b>\n\n"
-            f"🆔 شناسه کاربری: <code>{user_id}</code>\n"
-            f"💰 مبلغ واریزی: <b>{format_amount(final_amount)} تومان</b>\n"
-            f"📬 آدرس کیف پول:\n<code>{wallet}</code>\n"
-            f"🪙 ارز / شبکه: {currency} ({currency_fa}) / {network}\n"
-            f"🕐 زمان تراکنش: {now_str}\n\n"
+            "تراکنش شما تأیید شد\n\n"
+            f"شناسه کاربری: <code>{user_id}</code>\n\n"
+            f"مبلغ واریزی: <b>{format_amount(final_amount)} تومان</b>\n\n"
+            f"زمان تراکنش: {now_str}\n\n"
             "📌 لطفاً این پیام را برای طرف مقابل فوروارد کنید."
         ),
         parse_mode="HTML",
