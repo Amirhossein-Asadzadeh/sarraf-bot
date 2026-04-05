@@ -9,7 +9,9 @@ from telegram.warnings import PTBUserWarning
 
 warnings.filterwarnings("ignore", category=PTBUserWarning)
 
-from telegram.ext import ApplicationBuilder
+from telegram import Update
+from telegram.error import NetworkError, TimedOut
+from telegram.ext import ApplicationBuilder, ContextTypes
 
 from .config import BOT_TOKEN
 from .handlers import build_conversation_handler
@@ -21,16 +23,28 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if isinstance(context.error, (TimedOut, NetworkError)):
+        logger.warning("Network error (will retry automatically): %s", context.error)
+        return
+    logger.exception("Unhandled exception", exc_info=context.error)
+
+
 def main() -> None:
     logger.info("Starting sarraf bot…")
 
     app = (
         ApplicationBuilder()
         .token(BOT_TOKEN)
+        .connect_timeout(30)
+        .read_timeout(30)
+        .write_timeout(30)
+        .pool_timeout(30)
         .build()
     )
 
     app.add_handler(build_conversation_handler())
+    app.add_error_handler(error_handler)
 
     logger.info("Polling for updates…")
     app.run_polling(drop_pending_updates=True)
