@@ -94,21 +94,15 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
     await bot.send_message(
         chat_id=chat_id,
         text=(
-            "✅ تراکنش شما تأیید شد.\n"
-            "─────────────────────\n\n"
-            f"🆔 شناسه کاربری:\n"
-            f"    {user_id}\n\n"
-            f"💰 مبلغ واریزی:\n"
-            f"    {format_amount(final_amount)} تومان\n\n"
-            f"📬 آدرس کیف پول:\n"
-            f"    {wallet}\n\n"
-            f"🪙 ارز / شبکه:\n"
-            f"    {currency} ({currency_fa}) / {network}\n\n"
-            f"🕐 زمان تراکنش:\n"
-            f"    {now_str}\n\n"
-            "─────────────────────\n"
+            "✅ <b>تراکنش شما تأیید شد</b>\n\n"
+            f"🆔 شناسه کاربری: <code>{user_id}</code>\n"
+            f"💰 مبلغ واریزی: <b>{format_amount(final_amount)} تومان</b>\n"
+            f"📬 آدرس کیف پول:\n<code>{wallet}</code>\n"
+            f"🪙 ارز / شبکه: {currency} ({currency_fa}) / {network}\n"
+            f"🕐 زمان تراکنش: {now_str}\n\n"
             "📌 لطفاً این پیام را برای طرف مقابل فوروارد کنید."
         ),
+        parse_mode="HTML",
         reply_markup=MAIN_KEYBOARD,
     )
 
@@ -139,14 +133,14 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
         await bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=(
-                "📥 سفارش جدید:\n"
-                "─────────────────────\n"
-                f"👤 کاربر: @{username} (ID: {user_id})\n\n"
-                f"💰 مبلغ: {format_amount(amount)} تومان + کارمزد = {format_amount(final_amount)} تومان\n\n"
-                f"📬 کیف پول:\n    {wallet}\n\n"
-                f"🪙 ارز: {currency} ({currency_fa}) / {network}\n\n"
+                "📥 <b>سفارش جدید</b>\n\n"
+                f"👤 کاربر: @{username} (ID: <code>{user_id}</code>)\n"
+                f"💰 مبلغ: {format_amount(amount)} + کارمزد = <b>{format_amount(final_amount)} تومان</b>\n"
+                f"📬 کیف پول:\n<code>{wallet}</code>\n"
+                f"🪙 ارز: {currency} ({currency_fa}) / {network}\n"
                 f"🕐 زمان: {now_str}"
             ),
+            parse_mode="HTML",
         )
     except Exception:
         logger.exception("Failed to notify admin for user %s", user_id)
