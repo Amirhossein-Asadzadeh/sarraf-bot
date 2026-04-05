@@ -281,4 +281,5 @@ def build_conversation_handler() -> ConversationHandler:
             CommandHandler("start", start),
         ],
         allow_reentry=True,
+        per_message=False,
     )
