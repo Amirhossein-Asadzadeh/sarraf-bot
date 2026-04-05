@@ -3,6 +3,11 @@ Entry point — builds and runs the Telegram bot application.
 """
 
 import logging
+import warnings
+
+from telegram.warnings import PTBUserWarning
+
+warnings.filterwarnings("ignore", category=PTBUserWarning)
 
 from telegram.ext import ApplicationBuilder
 
