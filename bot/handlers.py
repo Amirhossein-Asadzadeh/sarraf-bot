@@ -9,6 +9,9 @@ from typing import Any
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
     Update,
 )
 from telegram.ext import (
@@ -31,12 +34,31 @@ logger = logging.getLogger(__name__)
 GET_WALLET, GET_CURRENCY, GET_NETWORK, GET_AMOUNT, GET_RECEIPT = range(5)
 
 # ---------------------------------------------------------------------------
-# Keyboards
+# Persian names for currencies
+# ---------------------------------------------------------------------------
+CURRENCY_FA = {
+    "USDT": "تتر",
+    "TRX":  "ترون",
+}
+
+# ---------------------------------------------------------------------------
+# Persistent reply keyboard (shown outside conversation)
+# ---------------------------------------------------------------------------
+MAIN_KEYBOARD = ReplyKeyboardMarkup(
+    [[KeyboardButton("ثبت درخواست جدید 🆕")]],
+    resize_keyboard=True,
+    is_persistent=True,
+)
+
+NEW_REQUEST_FILTER = filters.Regex(r"^ثبت درخواست جدید")
+
+# ---------------------------------------------------------------------------
+# Inline keyboards
 # ---------------------------------------------------------------------------
 CURRENCY_KEYBOARD = InlineKeyboardMarkup(
     [[
-        InlineKeyboardButton("USDT", callback_data="USDT"),
-        InlineKeyboardButton("TRX",  callback_data="TRX"),
+        InlineKeyboardButton("USDT — تتر",  callback_data="USDT"),
+        InlineKeyboardButton("TRX — ترون",  callback_data="TRX"),
     ]]
 )
 
@@ -58,27 +80,36 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
     """Wait 120 s, then send confirmation to user and forward to admin."""
     await asyncio.sleep(120)
 
-    now_str = tehran_now_str()
-    user_id       = data["user_id"]
-    username      = data["username"]
-    wallet        = data["wallet_address"]
-    currency      = data["currency"]
-    network       = data["network"]
-    amount        = data["amount"]
-    final_amount  = data["final_amount"]
+    now_str      = tehran_now_str()
+    user_id      = data["user_id"]
+    username     = data["username"]
+    wallet       = data["wallet_address"]
+    currency     = data["currency"]
+    network      = data["network"]
+    amount       = data["amount"]
+    final_amount = data["final_amount"]
+    currency_fa  = CURRENCY_FA.get(currency, currency)
 
     # ── Confirmation to user ──────────────────────────────────────────────
     await bot.send_message(
         chat_id=chat_id,
         text=(
-            "✅ تراکنش شما تأیید شد.\n\n"
-            f"🆔 شناسه کاربری: {user_id}\n"
-            f"💰 مبلغ واریزی: {format_amount(final_amount)} تومان\n"
-            f"📬 آدرس کیف پول: {wallet}\n"
-            f"🪙 ارز / شبکه: {currency} / {network}\n"
-            f"🕐 زمان تراکنش: {now_str}\n\n"
+            "✅ تراکنش شما تأیید شد.\n"
+            "─────────────────────\n\n"
+            f"🆔 شناسه کاربری:\n"
+            f"    {user_id}\n\n"
+            f"💰 مبلغ واریزی:\n"
+            f"    {format_amount(final_amount)} تومان\n\n"
+            f"📬 آدرس کیف پول:\n"
+            f"    {wallet}\n\n"
+            f"🪙 ارز / شبکه:\n"
+            f"    {currency} ({currency_fa}) / {network}\n\n"
+            f"🕐 زمان تراکنش:\n"
+            f"    {now_str}\n\n"
+            "─────────────────────\n"
             "📌 لطفاً این پیام را برای طرف مقابل فوروارد کنید."
         ),
+        reply_markup=MAIN_KEYBOARD,
     )
 
     # ── Forward to admin ──────────────────────────────────────────────────
@@ -90,7 +121,6 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
         return
 
     try:
-        # Forward the receipt
         if data["receipt_type"] == "photo":
             await bot.send_photo(
                 chat_id=ADMIN_CHAT_ID,
@@ -106,15 +136,15 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
                 ),
             )
 
-        # Summary message to admin
         await bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=(
                 "📥 سفارش جدید:\n"
-                f"👤 کاربر: @{username} (ID: {user_id})\n"
-                f"💰 مبلغ: {format_amount(amount)} تومان + کارمزد = {format_amount(final_amount)} تومان\n"
-                f"📬 کیف پول: {wallet}\n"
-                f"🪙 ارز: {currency} / {network}\n"
+                "─────────────────────\n"
+                f"👤 کاربر: @{username} (ID: {user_id})\n\n"
+                f"💰 مبلغ: {format_amount(amount)} تومان + کارمزد = {format_amount(final_amount)} تومان\n\n"
+                f"📬 کیف پول:\n    {wallet}\n\n"
+                f"🪙 ارز: {currency} ({currency_fa}) / {network}\n\n"
                 f"🕐 زمان: {now_str}"
             ),
         )
@@ -123,13 +153,14 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Step 1 — /start
+# Step 1 — /start  یا  دکمه «ثبت درخواست جدید»
 # ---------------------------------------------------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
     await update.message.reply_text(
-        "سلام! به صرافی ما خوش آمدید. 🪙\n\n"
-        "لطفاً آدرس کیف پول گیرنده را وارد کنید:"
+        "سلام! به صرافی میراکل خوش آمدید. 🪙\n\n"
+        "لطفاً آدرس کیف پول گیرنده را وارد کنید:",
+        reply_markup=ReplyKeyboardRemove(),
     )
     return GET_WALLET
 
@@ -226,12 +257,11 @@ async def get_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         "✅ رسید شما به ادمین ارسال شد. لطفاً صبور باشید..."
     )
 
-    # Fire-and-forget: wait 2 min then send confirmation + forward to admin
     asyncio.create_task(
         _send_confirmation(
             bot=context.bot,
             chat_id=update.effective_chat.id,
-            data=dict(context.user_data),   # snapshot — conversation state may change
+            data=dict(context.user_data),
         )
     )
 
@@ -243,7 +273,10 @@ async def get_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 # ---------------------------------------------------------------------------
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
-    await update.message.reply_text("❌ عملیات لغو شد.")
+    await update.message.reply_text(
+        "❌ عملیات لغو شد.",
+        reply_markup=MAIN_KEYBOARD,
+    )
     return ConversationHandler.END
 
 
@@ -252,7 +285,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 # ---------------------------------------------------------------------------
 def build_conversation_handler() -> ConversationHandler:
     return ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
+        entry_points=[
+            CommandHandler("start", start),
+            MessageHandler(NEW_REQUEST_FILTER, start),
+        ],
         states={
             GET_WALLET: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, get_wallet),
@@ -277,8 +313,8 @@ def build_conversation_handler() -> ConversationHandler:
         },
         fallbacks=[
             CommandHandler("cancel", cancel),
-            # Re-entering /start mid-flow restarts the conversation
             CommandHandler("start", start),
+            MessageHandler(NEW_REQUEST_FILTER, start),
         ],
         allow_reentry=True,
         per_message=False,

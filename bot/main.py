@@ -11,10 +11,10 @@ warnings.filterwarnings("ignore", category=PTBUserWarning)
 
 from telegram import Update
 from telegram.error import NetworkError, TimedOut
-from telegram.ext import ApplicationBuilder, ContextTypes
+from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
 from .config import BOT_TOKEN
-from .handlers import build_conversation_handler
+from .handlers import MAIN_KEYBOARD, build_conversation_handler
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)-8s | %(name)s — %(message)s",
@@ -43,7 +43,15 @@ def main() -> None:
         .build()
     )
 
+    # Show the main keyboard to any user who sends a message before /start
+    async def greet_new_user(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+        await update.message.reply_text(
+            "سلام! برای شروع روی دکمه زیر ضربه بزنید 👇",
+            reply_markup=MAIN_KEYBOARD,
+        )
+
     app.add_handler(build_conversation_handler())
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, greet_new_user))
     app.add_error_handler(error_handler)
 
     logger.info("Polling for updates…")
