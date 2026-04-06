@@ -226,8 +226,8 @@ async def get_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     await update.message.reply_text(
         f"لطفاً مبلغ <b>{format_amount(final_amount)} تومان</b> را به شماره کارت زیر واریز کنید:\n\n"
-        "<code>6219861933296682</code>\n"
-        "مرجان غفارزاده\n\n"
+        "<code>6219861911722014</code>\n"
+        "اسدزاده\n\n"
         "سپس تصویر یا متن رسید واریزی خود را ارسال کنید.",
         parse_mode="HTML",
     )
