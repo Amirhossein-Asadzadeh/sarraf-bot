@@ -24,7 +24,7 @@ from telegram.ext import (
 )
 
 from .config import ADMIN_CHAT_ID
-from .utils import format_amount, parse_amount, tehran_now_str
+from .utils import format_amount, parse_amount, randomize_amount, tehran_now_str
 
 logger = logging.getLogger(__name__)
 
@@ -80,15 +80,16 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
     """Wait 120 s, then send confirmation to user and forward to admin."""
     await asyncio.sleep(120)
 
-    now_str      = tehran_now_str()
-    user_id      = data["user_id"]
-    username     = data["username"]
-    wallet       = data["wallet_address"]
-    currency     = data["currency"]
-    network      = data["network"]
-    amount       = data["amount"]
-    final_amount = data["final_amount"]
-    currency_fa  = CURRENCY_FA.get(currency, currency)
+    now_str        = tehran_now_str()
+    user_id        = data["user_id"]
+    username       = data["username"]
+    wallet         = data["wallet_address"]
+    currency       = data["currency"]
+    network        = data["network"]
+    amount         = data["amount"]
+    final_amount   = data["final_amount"]
+    payment_amount = data.get("payment_amount", final_amount)
+    currency_fa    = CURRENCY_FA.get(currency, currency)
 
     # ── Confirmation to user ──────────────────────────────────────────────
     await bot.send_message(
@@ -96,7 +97,7 @@ async def _send_confirmation(bot: Any, chat_id: int, data: dict) -> None:
         text=(
             "تراکنش شما تأیید شد\n\n"
             f"شناسه کاربری: <code>{user_id}</code>\n\n"
-            f"مبلغ کل واریزی: <b>{format_amount(final_amount)} تومان</b>\n"
+            f"مبلغ کل واریزی: <b>{format_amount(payment_amount)} تومان</b>\n"
             f"کارمزد صرافی: {format_amount(final_amount - amount)} تومان\n"
             f"مبلغ واریز شده: {format_amount(amount)} تومان\n\n"
             f"زمان تراکنش: {now_str}\n\n"
@@ -220,14 +221,18 @@ async def get_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return GET_AMOUNT
 
-    final_amount = amount * 1.05
-    context.user_data["amount"]       = amount
-    context.user_data["final_amount"] = final_amount
+    final_amount   = amount * 1.05
+    payment_amount = randomize_amount(final_amount)
+    context.user_data["amount"]         = amount
+    context.user_data["final_amount"]   = final_amount
+    context.user_data["payment_amount"] = payment_amount
 
     await update.message.reply_text(
-        f"لطفاً مبلغ <b>{format_amount(final_amount)} تومان</b> را به شماره کارت زیر واریز کنید:\n\n"
-        "<code>6219861911722014</code>\n"
-        "اسدزاده\n\n"
+        f"لطفاً مبلغ <b>{format_amount(payment_amount)} تومان</b> را به شماره کارت زیر واریز کنید:\n\n"
+        "<code>6219861936033249</code>\n"
+        "قاسمی وند\n\n"
+        "⚡️ برای تسریع در فرآیند تأیید رسید، لطفاً همین مبلغ را <b>دقیقاً</b> واریز کنید.\n"
+        "مبالغ غیر رند، پردازش سریع‌تری دارند.\n\n"
         "سپس تصویر یا متن رسید واریزی خود را ارسال کنید.",
         parse_mode="HTML",
     )

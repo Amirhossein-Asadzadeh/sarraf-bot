@@ -1,3 +1,4 @@
+import random
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -29,6 +30,15 @@ def parse_amount(text: str) -> float:
 def format_amount(value: float) -> str:
     """Format a number with thousand-separators and no decimals."""
     return f"{value:,.0f}"
+
+
+def randomize_amount(amount: float) -> int:
+    """
+    Apply a random ±5% variation so every transaction has a unique non-round amount.
+    Returns an integer (toman has no sub-unit worth tracking).
+    """
+    factor = random.uniform(0.95, 1.05)
+    return round(amount * factor)
 
 
 def tehran_now_str() -> str:
